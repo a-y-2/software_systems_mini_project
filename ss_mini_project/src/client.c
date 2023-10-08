@@ -105,7 +105,7 @@ int main(){
 
     char ch;
 
-    printf("\n\nEnter the login account type\n1. Administrator\n2. Student \n3. Faculty\n\nEnter your choice(1,2 or 3) : ");
+    printf("\n\nEnter the login account type\n1. Administrator\n2. Faculty \n3. Faculty\n\nEnter your choice(1,2 or 3) : ");
     scanf("%c", &ch);
     if (ch != '1' && ch != '2' && ch != '3')
     {
