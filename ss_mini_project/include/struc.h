@@ -1,6 +1,7 @@
 struct Student
 {
     int id; // 0, 1, 2 ....
+    bool status;//0,1
     char name[25];
     char gender; // M -> Male, F -> Female, O -> Other
     int age;
