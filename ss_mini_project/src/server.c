@@ -7,12 +7,13 @@
 #include <netinet/ip.h> 
 #include <string.h>
 #include <stdlib.h>
+#include "../include/common.h"
 
 // includes
 #include "../include/constants.h"
-#include "../include/admin.h"
+//#include "../include/admin.h"
 #include "../include/faculty.h"
-#include "../include/faculty.h"
+//#include "../include/student.h"
 
 
 // Handles the communication with the client
@@ -36,21 +37,21 @@ void connection_handler(int connfd)
 
         switch (userChoice)
         {
-        case 1:
-            // Admin
+        // case 1:
+        //     // Admin
 
-            admin_operation_handler(connfd);
-            break;
+        //     admin_operation_handler(connfd);
+        //     break;
         // case 2:
-        //     // faculty
+        //     // student
 
-        //     faculty_operation_handler(connfd);
+        //     student_operation_handler(connfd);
         //     break;
-        // case 3:
-        //     // faculty
+        case 3:
+            // faculty
 
-        //     faculty_operation_handler(connfd);
-        //     break;
+            faculty_operation_handler(connfd);
+            break;
         default:
             exit(EXIT_FAILURE);
         }

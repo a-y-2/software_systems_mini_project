@@ -1,16 +1,16 @@
-#include <stdbool.h>
-#include "./struc.h"
-#include<sys/types.h>
-#include<fcntl.h>
-#include<sys/stat.h>
-#include<stdio.h>
-#include<errno.h>
-#include<time.h>
-#include<unistd.h>
-#include<ctype.h>
-#include<crypt.h>
+// #include <stdbool.h>
+// #include "./struc.h"
+// #include<sys/types.h>
+// #include<fcntl.h>
+// #include<sys/stat.h>
+// #include<stdio.h>
+// #include<errno.h>
+// #include<time.h>
+// #include<unistd.h>
+// #include<ctype.h>
+// #include<crypt.h>
 
-
+//#include "./common.h"
 
 //function declaration
 
@@ -208,10 +208,10 @@ bool add_student(int connFD){
     }
 
     int studentAge = atoi(readBuffer);
-     new_stu.age = studentAge;
+    new_stu.age = studentAge;
 
     new_stu.status = 1;
-    int fd1  = open("STUDENT_RECORD.doc",O_CREAT | O_APPEND | O_WRONLY,0777);
+    int fd1  = open("STUDENT_RECORD.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
 
     if (fd1 == -1)
     {

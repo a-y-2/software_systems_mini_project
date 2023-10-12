@@ -27,3 +27,25 @@ struct Faculty
     // int account; // Account number of the account the Faculty owns
     // bool isAccountholder;
 };
+
+struct Enrollment {
+    int studentid;
+    //char studentName[100];
+    int courseid;
+    //char courseName[100];
+    //int status;
+    //int id;
+    //char enrollmentDate[12];
+};
+
+struct Course {
+    int courseID;
+    char courseName[100];
+};
+
+struct Teach {
+    int faculty_id;
+    int course_id;
+    char fac_name[100];
+    char course_name[100];
+};

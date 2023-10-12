@@ -1,0 +1,286 @@
+//function declaration
+
+bool faculty_operation_handler(int connFD);
+bool add_course(int connFD);
+bool remove_course(int connFD);
+
+bool faculty_operation_handler(int connFD)
+{
+    ssize_t writeBytes, readBytes;            // Number of bytes read from / written to the client
+    char readBuffer[1000], writeBuffer[1000]; 
+    bzero(writeBuffer,sizeof(writeBuffer));
+    strcat(writeBuffer, "\n\n------------------------Faculty Menu-------------------------\n");
+            strcat(writeBuffer, "\n1. Add new course\n2. Remove offered course\n3. View enrollments in courses\n4. Change password\n5. exit\n");
+            strcat(writeBuffer, "\n------------------------------------------------------------\nEnter your choice : ");
+
+
+            writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+            
+            if (writeBytes == -1)
+            {
+                perror("Error while writing FACULTY_MENU to client!");
+                return false;
+            }
+            bzero(writeBuffer, sizeof(writeBuffer));
+
+            readBytes = read(connFD, readBuffer, sizeof(readBuffer));//client has seen the above menu and sent the choice
+            if (readBytes == -1)
+            {
+                perror("Error while reading client's choice for FACULTY_MENU");
+                return false;
+            }
+
+            int choice = atoi(readBuffer);
+            switch (choice)
+            {
+            case 1:
+                add_course(connFD);
+                break;
+
+            case 2:
+                remove_course(connFD);
+                break;
+            // case 3:
+            //     view_enrollments(connFD);
+            //     break;
+
+            // case 4:
+            //     change_password(connFD);
+            //     break;
+
+            default:
+                writeBytes = write(connFD, "\nLogging you out!$", strlen("\nLogging you out!$"));
+                return false;
+            }
+        
+    
+    // else
+    // {
+    //     // ADMIN LOGIN FAILED
+    //     bzero(writeBuffer, sizeof(writeBuffer));
+    //     sprintf(writeBuffer, "%s\n", "No account found!!$");
+    //     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+    //     return false;
+    // }
+    return true;
+}
+
+//=================================================ADD NEW COURSE===============================================
+bool add_course(int connFD){
+    ssize_t readBytes, writeBytes;
+    char readBuffer[1000], writeBuffer[1000];
+
+    struct Teach new_teach;// structure for storing faculty id and course id
+
+    sprintf(writeBuffer, "%s%s", "\nEnter the details : \n\n", "faculty name - ");
+    //After the sprintf() call, writeBuffer will contain the formatted message
+
+    writeBytes = write(connFD, writeBuffer, sizeof(writeBuffer));
+    if (writeBytes == -1)
+    {
+        perror("Error writing message to client!");
+        return -2;
+    }
+
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    if (readBytes == -1)
+    {
+        perror("Error reading name response from client!");
+        
+        return -2;
+    }
+
+    strcpy(new_teach.fac_name, readBuffer);
+
+    bzero(writeBuffer,sizeof(writeBuffer));
+    strcpy(writeBuffer, "\nEnter course name ? : ");
+
+    writeBytes = write(connFD, writeBuffer, sizeof(writeBuffer));
+    if (writeBytes == -1)
+    {
+        perror("Error writing message to client!");
+        return -2;
+    }
+
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    if (readBytes == -1)
+    {
+        perror("Error reading name response from client!");
+        
+        return -2;
+    }
+
+    strcpy(new_teach.course_name, readBuffer);
+  
+    bzero(writeBuffer,sizeof(writeBuffer));
+    strcpy(writeBuffer, "\nEnter your id ? : ");
+    writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+    if (writeBytes == -1)
+    {
+        perror("Error writing message to client!");
+        return -2;
+    }
+
+    bzero(readBuffer, sizeof(readBuffer));
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    if (readBytes == -1)
+    {
+        perror("Error reading faculty id response from client!");
+        return -2;
+    }
+
+    int facultyID = atoi(readBuffer);
+    new_teach.faculty_id = facultyID;
+
+    bzero(writeBuffer,sizeof(writeBuffer));
+    strcpy(writeBuffer, "\nEnter COURSE id ? : ");
+    writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+    if (writeBytes == -1)
+    {
+        perror("Error writing message to client!");
+        return -2;
+    }
+
+    bzero(readBuffer, sizeof(readBuffer));
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    if (readBytes == -1)
+    {
+        perror("Error reading course id response from client!");
+        return -2;
+    }
+
+    int courseID = atoi(readBuffer);
+    new_teach.course_id = courseID;
+
+    int fd1  = open("TEACH.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
+
+    if (fd1 == -1)
+    {
+        perror("Error while opening teach file");
+        return -2;
+    }
+    
+    else{
+        
+
+        struct flock lock ;
+        lock.l_type = F_WRLCK;
+        lock.l_whence = SEEK_SET;//start position of the lock (lock.l_start) is relative to the beginning of the file.
+        lock.l_start = 0;//Set the starting position for the lock. 
+        lock.l_len = 0;//lock covers the entire faculty record
+        lock.l_pid = getpid();   
+    
+        //set lock on file    
+        fcntl(fd1, F_SETLKW, &lock);
+        //new_stu.id++;
+
+          
+        write(fd1,&new_teach,sizeof(new_teach));
+
+        lock.l_type = F_UNLCK;
+        fcntl(fd1,F_SETLK,&lock);
+        printf("\n details added");
+        close(fd1);
+    }
+
+   
+
+    return true;
+}
+
+//===========================================REMOVE COURSE========================================================
+bool remove_course(int connFD){
+    ssize_t readBytes, writeBytes;
+    char readBuffer[1000], writeBuffer[1000];
+
+    struct Teach new_teach,temp_teach;// structure for storing faculty id and course id
+  
+    bzero(writeBuffer,sizeof(writeBuffer));
+    strcpy(writeBuffer, "\nEnter your id ? : ");
+    writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+    if (writeBytes == -1)
+    {
+        perror("Error writing message to client!");
+        return -2;
+    }
+
+    bzero(readBuffer, sizeof(readBuffer));
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    if (readBytes == -1)
+    {
+        perror("Error reading faculty id response from client!");
+        return -2;
+    }
+
+    int facultyID = atoi(readBuffer);
+    new_teach.faculty_id = facultyID;
+
+    bzero(writeBuffer,sizeof(writeBuffer));
+    strcpy(writeBuffer, "\nEnter COURSE id ? : ");
+    writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+    if (writeBytes == -1)
+    {
+        perror("Error writing message to client!");
+        return -2;
+    }
+
+    bzero(readBuffer, sizeof(readBuffer));
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    if (readBytes == -1)
+    {
+        perror("Error reading course id response from client!");
+        return -2;
+    }
+
+    int courseID = atoi(readBuffer);
+    new_teach.course_id = courseID;
+
+    int fd1  = open("TEACH.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
+
+    if (fd1 == -1)
+    {
+        perror("Error while opening teach file");
+        return -2;
+    }
+
+    struct flock lock ;
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_SET;//start position of the lock (lock.l_start) is relative to the beginning of the file.
+    lock.l_start = 0;//Set the starting position for the lock. 
+    lock.l_len = 0;//lock covers the entire faculty record
+    lock.l_pid = getpid();   
+
+    //set lock on file    
+    fcntl(fd1, F_SETLKW, &lock);
+
+    // int fd2  = open("temp.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
+
+    int bytesRead;
+    int bytesToRead = sizeof(struct Teach);
+    int bytesToWrite = 0;
+
+    // Read and write records, excluding the one to be deleted
+    while ((bytesRead = read(fd1, &temp_teach, bytesToRead)) > 0) {
+        if ((temp_teach.faculty_id == new_teach.faculty_id)&&(temp_teach.course_id == new_teach.course_id)) {
+            // Skip this record
+            lseek(fd1, -bytesToRead, SEEK_CUR);
+        } else {
+            // Write the record back to the file
+            write(fd1, &temp_teach, bytesToRead);
+            bytesToWrite += bytesRead;
+        }
+    }
+
+    // Truncate the file to the new size
+    ftruncate(fd1, bytesToWrite);
+
+    lock.l_type = F_UNLCK;
+    fcntl(fd1,F_SETLK,&lock);
+    printf("\n removed successfully!!");
+
+    close(fd1);
+
+   
+
+    return true;
+}
