@@ -13,7 +13,7 @@
 #include "../include/constants.h"
 //#include "../include/admin.h"
 #include "../include/faculty.h"
-//#include "../include/student.h"
+#include "../include/student.h"
 
 
 // Handles the communication with the client
@@ -42,11 +42,11 @@ void connection_handler(int connfd)
 
         //     admin_operation_handler(connfd);
         //     break;
-        // case 2:
-        //     // student
+        case 2:
+            // student
 
-        //     student_operation_handler(connfd);
-        //     break;
+            student_operation_handler(connfd);
+            break;
         case 3:
             // faculty
 

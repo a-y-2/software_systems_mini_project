@@ -41,6 +41,7 @@ struct Enrollment {
 struct Course {
     int courseID;
     char courseName[100];
+    int max_seats;
 };
 
 struct Teach {

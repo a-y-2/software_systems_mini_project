@@ -152,6 +152,27 @@ bool add_course(int connFD){
     int courseID = atoi(readBuffer);
     new_teach.course_id = courseID;
 
+    // bzero(writeBuffer,sizeof(writeBuffer));
+    // strcpy(writeBuffer, "\nmax no. of seats for this course ? : ");
+    // writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+    // if (writeBytes == -1)
+    // {
+    //     perror("Error writing message to client!");
+    //     return -2;
+    // }
+
+    // bzero(readBuffer, sizeof(readBuffer));
+    // readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    // if (readBytes == -1)
+    // {
+    //     perror("Error reading max_seats response from client!");
+    //     return -2;
+    // }
+
+    // int seats = atoi(readBuffer);
+    // struct Course course;
+    // .max_seats = seats;
+
     int fd1  = open("TEACH.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
 
     if (fd1 == -1)

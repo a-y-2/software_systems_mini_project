@@ -16,6 +16,7 @@
 bool student_operation_handler(int connFD);
 bool enroll(int connFD);
 bool unenroll(int connFD);
+bool view_courses(int connFD);
 
 bool student_operation_handler(int connFD)
 {
@@ -53,9 +54,9 @@ bool student_operation_handler(int connFD)
             case 2:
                 unenroll(connFD);
                 break;
-            // case 3:
-            //     view_courses(connFD);
-            //     break;
+            case 3:
+                view_courses(connFD);
+                break;
 
             // case 4:
             //     update_password(connFD);
@@ -86,7 +87,50 @@ bool enroll(int connFD){
     char readBuffer[1000], writeBuffer[1000];
 
     struct Enrollment enrol;// structure for storing student id and course id
-  
+    struct Teach teach;
+    //firstly display teach file contents to the student so that he can choose which courses are being offered
+
+    int fd = open("TEACH.txt", O_RDONLY);
+    if (fd == -1)
+    {
+        perror("Error while opening TEACH file");
+        return -2;
+    }
+          
+
+    struct flock lock = {F_RDLCK, SEEK_SET, 0, 0, getpid()};
+    int lockingStatus = fcntl(fd, F_SETLKW, &lock);
+    if (lockingStatus == -1)
+    {
+        perror("Error obtaining read lock on TEACH record!");
+        return -2;
+    }
+
+    ssize_t bytes_read;
+    // Read and send the file's content to the client
+    while ((bytes_read = read(fd, &teach, sizeof(struct Teach))) > 0) {
+    bzero(writeBuffer,sizeof(writeBuffer));
+    
+    sprintf(writeBuffer, "%d %d %s %s", teach.faculty_id,teach.course_id,teach.fac_name,teach.course_name);
+    writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+    if (writeBytes == -1) {
+        perror("Error writing message to client!");
+        return -2;
+    }
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+    
+}
+
+// Dummy read on connFD
+//readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+    
+
+    lock.l_type = F_UNLCK;
+    fcntl(fd, F_SETLK, &lock);
+
+    // Close the file
+    close(fd);
+
     bzero(writeBuffer,sizeof(writeBuffer));
     strcpy(writeBuffer, "\nEnter your id ? : ");
     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
@@ -125,13 +169,13 @@ bool enroll(int connFD){
     }
 
     int courseID = atoi(readBuffer);
-    new_teach.course_id = courseID;
+    enrol.courseid = courseID;
 
-    int fd1  = open("TEACH.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
+    int fd1  = open("ENROLLMENTS.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
 
     if (fd1 == -1)
     {
-        perror("Error while opening teach file");
+        perror("Error while opening enrol file");
         return -2;
     }
     
@@ -142,7 +186,7 @@ bool enroll(int connFD){
         lock.l_type = F_WRLCK;
         lock.l_whence = SEEK_SET;//start position of the lock (lock.l_start) is relative to the beginning of the file.
         lock.l_start = 0;//Set the starting position for the lock. 
-        lock.l_len = 0;//lock covers the entire faculty record
+        lock.l_len = 0;//lock covers the entire record
         lock.l_pid = getpid();   
     
         //set lock on file    
@@ -150,7 +194,7 @@ bool enroll(int connFD){
         //new_stu.id++;
 
           
-        write(fd1,&new_teach,sizeof(new_teach));
+        write(fd1,&enrol,sizeof(enrol));
 
         lock.l_type = F_UNLCK;
         fcntl(fd1,F_SETLK,&lock);
@@ -167,142 +211,166 @@ bool unenroll(int connFD){
     ssize_t readBytes, writeBytes;
     char readBuffer[1000], writeBuffer[1000];
 
-    struct Enrollment enrol;
-
-    int enrol_id;
-
-    off_t offset;//off_t is a data type often used in C and C++ programming for representing file offsets
-    int lockingStatus;
-
-    writeBytes = write(connFD, "\n enter your enrollment ID : ", strlen("\n enter your enrollment ID : "));
+    struct Enrollment new_enrol,temp_enrol;
+  
+    bzero(writeBuffer,sizeof(writeBuffer));
+    strcpy(writeBuffer, "\nEnter your id ? : ");
+    writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
     if (writeBytes == -1)
     {
-        perror("Error while writing message to client!");
-        return false;
+        perror("Error writing message to client!");
+        return -2;
     }
+
     bzero(readBuffer, sizeof(readBuffer));
     readBytes = read(connFD, readBuffer, sizeof(readBuffer));
     if (readBytes == -1)
     {
-        perror("Error while reading enrollment ID from client!");
-        return false;
+        perror("Error reading student id response from client!");
+        return -2;
     }
 
-    enrol_id = atoi(readBuffer);
-    // printf("%s", readBuffer);
+    int studentID = atoi(readBuffer);
+    new_enrol.studentid = studentID;
 
-    int enrolFileDescriptor = open("ENROLLMENTS.csv", O_RDONLY);
-    if (enrolFileDescriptor == -1)
+    bzero(writeBuffer,sizeof(writeBuffer));
+    strcpy(writeBuffer, "\nEnter COURSE id ? : ");
+    writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+    if (writeBytes == -1)
     {
-        // enrol File doesn't exist
-        bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer, "\n***error in opening file***\n");
-        //strcat(writeBuffer, "^");
-        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-        if (writeBytes == -1)
-        {
-            perror("Error while writing error message to client!");
-            return false;
-        }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-        return false;
+        perror("Error writing message to client!");
+        return -2;
     }
 
-    offset = lseek(enrolFileDescriptor, (enrol_id-1) * sizeof(struct Enrollment), SEEK_SET);
-    if (errno == EINVAL)
-    {
-        // record doesn't exist
-        bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer, "\n***No enrollment found for the given ID***\n");
-        //strcat(writeBuffer, "^");
-        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-        if (writeBytes == -1)
-        {
-            perror("Error while writing ID_DOESNT_EXIT message to client!");
-            return false;
-        }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-        return false;
-    }
-    else if (offset == -1)
-    {
-        perror("Error while seeking to required enrollment record!");
-        return false;
-    }
-
-    struct flock lock = {F_RDLCK, SEEK_SET, offset, sizeof(struct Enrollment), getpid()};
-
-    // Lock the record to be read
-    lockingStatus = fcntl(enrolFileDescriptor, F_SETLKW, &lock);
-    if (lockingStatus == -1)
-    {
-        perror("Couldn't obtain lock on enrollment record!");
-        return false;
-    }
-
-    readBytes = read(enrolFileDescriptor, &enrol, sizeof(struct Enrollment));
+    bzero(readBuffer, sizeof(readBuffer));
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
     if (readBytes == -1)
     {
-        perror("Error while reading enrollment record from the file!");
-        return false;
+        perror("Error reading course id response from client!");
+        return -2;
     }
 
-    // Unlock the record
-    lock.l_type = F_UNLCK;
-    fcntl(enrolFileDescriptor, F_SETLK, &lock);
+    int courseID = atoi(readBuffer);
+    new_enrol.courseid = courseID;
 
-    close(enrolFileDescriptor);
-    if (readBytes == 0)
-    {
-        // record doesn't exist
-        bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer, "\n***No enrollment could be found for the given ID***\n");
-        strcat(writeBuffer, "^");
-        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-        if (writeBytes == -1)
-        {
-            perror("Error while writing ID_DOESNT_EXIT message to client!");
-            return false;
-        }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-        return false;
-    }
-    
-    enrol.status = 0;
-
-    int fd1  = open("ENROLLMENTS.csv",O_CREAT | O_APPEND | O_WRONLY,0777);
+    int fd1  = open("ENROLLMENTS.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
 
     if (fd1 == -1)
     {
-        perror("Error while opening enrollments file");
+        perror("Error while opening enrol file");
         return -2;
     }
-    
-    else{
-        
 
-        struct flock lock ;
-        lock.l_type = F_WRLCK;
-        lock.l_whence = SEEK_SET;//start position of the lock (lock.l_start) is relative to the beginning of the file.
-        lock.l_start = (enrol.id-1)*sizeof(enrol);//Set the starting position for the lock. 
-        lock.l_len = sizeof(enrol);//lock covers the entire record
-        lock.l_pid = getpid();   
-    
-        //set lock on file    
-        fcntl(fd1, F_SETLKW, &lock);
-        //new_fac.id++;
+    struct flock lock ;
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_SET;//start position of the lock (lock.l_start) is relative to the beginning of the file.
+    lock.l_start = 0;//Set the starting position for the lock. 
+    lock.l_len = 0;//lock covers the entire faculty record
+    lock.l_pid = getpid();   
 
-       //entering critical section to add faculty 
-        lseek(fd1,(enrol.id-1)*sizeof(enrol),SEEK_SET);
-        write(fd1,&enrol,sizeof(enrol));
+    //set lock on file    
+    fcntl(fd1, F_SETLKW, &lock);
 
-        lock.l_type = F_UNLCK;
-        fcntl(fd1,F_SETLK,&lock);
-        printf("\n unenrolled successfully");
-        close(fd1);
+    // int fd2  = open("temp.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
+
+    int bytesRead;
+    int bytesToRead = sizeof(struct Enrollment);
+    int bytesToWrite = 0;
+
+    // Read and write records, excluding the one to be deleted
+    while ((bytesRead = read(fd1, &temp_enrol, bytesToRead)) > 0) {
+        if ((temp_enrol.studentid == new_enrol.studentid)&&(temp_enrol.courseid == new_enrol.courseid)) {
+            // Skip this record
+            lseek(fd1, -bytesToRead, SEEK_CUR);
+        } else {
+            // Write the record back to the file
+            write(fd1, &temp_enrol, bytesToRead);
+            bytesToWrite += bytesRead;
+        }
     }
 
+    // Truncate the file to the new size
+    ftruncate(fd1, bytesToWrite);
+
+    lock.l_type = F_UNLCK;
+    fcntl(fd1,F_SETLK,&lock);
+    printf("\n unenrolled successfully!!");
+
+    close(fd1);
+
+   
+
     return true;
+}
 
+//=======================================VIEW ENROLLED COURSES==============================================================
+bool view_courses(int connFD){
+    ssize_t readBytes, writeBytes;
+    char readBuffer[1000], writeBuffer[1000];
 
+    struct Enrollment new_enrol,temp_enrol;// structure for storing faculty id and course id
+  
+    bzero(writeBuffer,sizeof(writeBuffer));
+    strcpy(writeBuffer, "\nEnter your id ? : ");
+    writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+    if (writeBytes == -1)
+    {
+        perror("Error writing message to client!");
+        return -2;
+    }
+
+    bzero(readBuffer, sizeof(readBuffer));
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    if (readBytes == -1)
+    {
+        perror("Error reading student id response from client!");
+        return -2;
+    }
+
+    int studentID = atoi(readBuffer);
+    new_enrol.studentid = studentID;
+
+    int fd1  = open("ENROLLMENTS.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
+
+    if (fd1 == -1)
+    {
+        perror("Error while opening teach file");
+        return -2;
+    }
+
+    struct flock lock ;
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_SET;//start position of the lock (lock.l_start) is relative to the beginning of the file.
+    lock.l_start = 0;//Set the starting position for the lock. 
+    lock.l_len = 0;//lock covers the entire record
+    lock.l_pid = getpid();   
+
+    //set lock on file    
+    fcntl(fd1, F_SETLKW, &lock);
+
+    // int fd2  = open("temp.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
+
+    int bytesRead;
+    int bytesToRead = sizeof(struct Enrollment);
+    int bytesToWrite = 0;
+
+    // Read and write records, excluding the one to be deleted
+    while ((bytesRead = read(fd1, &temp_enrol, bytesToRead)) > 0) {
+        if (temp_enrol.studentid == new_enrol.studentid) {
+            bzero(writeBuffer,sizeof(writeBuffer));    
+            sprintf(writeBuffer, "%d %d ", temp_enrol.studentid,temp_enrol.courseid);
+            writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+            if (writeBytes == -1) {
+                perror("Error writing message to client!");
+                return -2;
+            }
+            readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+        }
+    }
+
+    lock.l_type = F_UNLCK;
+    fcntl(fd1,F_SETLK,&lock);
+    printf("\n displayed successfully!!");
+    close(fd1);
+    return true;
 }
