@@ -11,7 +11,7 @@
 
 // includes
 #include "../include/constants.h"
-//#include "../include/admin.h"
+#include "../include/admin.h"
 #include "../include/faculty.h"
 #include "../include/student.h"
 
@@ -37,11 +37,11 @@ void connection_handler(int connfd)
 
         switch (userChoice)
         {
-        // case 1:
-        //     // Admin
+        case 1:
+            // Admin
 
-        //     admin_operation_handler(connfd);
-        //     break;
+            admin_operation_handler(connfd);
+            break;
         case 2:
             // student
 

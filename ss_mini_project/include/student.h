@@ -356,6 +356,7 @@ bool view_courses(int connFD){
 
     // Read and write records, excluding the one to be deleted
     while ((bytesRead = read(fd1, &temp_enrol, bytesToRead)) > 0) {
+        //printf("%d \n",temp_enrol.studentid);
         if (temp_enrol.studentid == new_enrol.studentid) {
             bzero(writeBuffer,sizeof(writeBuffer));    
             sprintf(writeBuffer, "%d %d ", temp_enrol.studentid,temp_enrol.courseid);

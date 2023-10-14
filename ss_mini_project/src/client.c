@@ -24,40 +24,40 @@ void connection_handler(int sockFD)
         readBytes = read(sockFD, readBuffer, sizeof(readBuffer));//read data from sockFD and store it in readBuffer
         if (readBytes <= 0)
             perror("Error while reading from client socket!");
-//         else if (strchr(readBuffer, '^') != NULL)//The strchr() function is used to search for the '^' character in the readBuffer. 
-//         {
-//             // Skip read from client
-//             strncpy(tempBuffer, readBuffer, strlen(readBuffer) - 1);
-//             printf("%s", tempBuffer);
-//             writeBytes = write(sockFD, "^", strlen("^"));
-//             if (writeBytes == -1)
-//             {
-//                 perror("Error while writing to client socket!");
-//                 break;
-//             }
-//         }
-//         else if (strchr(readBuffer, '$') != NULL)
-//         {
-//             // Server sent an error message and is now closing it's end of the connection
-//             strncpy(tempBuffer, readBuffer, strlen(readBuffer) - 2);
-//             printf("%s", tempBuffer);
-//             printf("\n\nClosing the connection to the server now!\n\n");
-//             exit(EXIT_SUCCESS);
-//         }
-//         else
-//         {
+        // else if (strchr(readBuffer, '^') != NULL)//The strchr() function is used to search for the '^' character in the readBuffer. 
+        // {
+        //     // Skip read from client
+        //     strncpy(tempBuffer, readBuffer, strlen(readBuffer) - 1);
+        //     printf("%s", tempBuffer);
+        //     writeBytes = write(sockFD, "^", strlen("^"));
+        //     if (writeBytes == -1)
+        //     {
+        //         perror("Error while writing to client socket!");
+        //         break;
+        //     }
+        // }
+        // else if (strchr(readBuffer, '$') != NULL)
+        // {
+        //     // Server sent an error message and is now closing it's end of the connection
+        //     strncpy(tempBuffer, readBuffer, strlen(readBuffer) - 2);
+        //     printf("%s", tempBuffer);
+        //     printf("\n\nClosing the connection to the server now!\n\n");
+        //     exit(EXIT_SUCCESS);
+        // }
+        // else
+        // {
 
-//             bzero(writeBuffer, sizeof(writeBuffer)); // Empty the write buffer
-//             // password input
-//             if (strchr(readBuffer, '>') != NULL)
-//                 strcpy(writeBuffer, getpass(readBuffer));//The getpass() function is a C library function that is used to securely read a 
-//                                                         //password or passphrase from the user without displaying the characters on the screen. 
-//             else
-//             {
-//                 // data input
+        //     bzero(writeBuffer, sizeof(writeBuffer)); // Empty the write buffer
+        //     // password input
+        //     if (strchr(readBuffer, '>') != NULL)
+        //         strcpy(writeBuffer, getpass(readBuffer));//The getpass() function is a C library function that is used to securely read a 
+        //                                                 //password or passphrase from the user without displaying the characters on the screen. 
+        //     else
+        //     {
+                // data input
                 printf("%s", readBuffer);
                 scanf("%s", writeBuffer); // Take user input!
-//             }
+           // }
 
             writeBytes = write(sockFD, writeBuffer, strlen(writeBuffer));
             if (writeBytes == -1)
@@ -67,9 +67,9 @@ void connection_handler(int sockFD)
                 //break;
             }
         }while(readBytes > 0);
-
+    
     close(sockFD);
-
+    //}
    }
 
 
