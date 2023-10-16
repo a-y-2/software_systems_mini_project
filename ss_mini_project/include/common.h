@@ -97,10 +97,10 @@ int faculty_login_handler(int Socket_Descriptor, int Role){
 
 	struct Faculty faculty;
 
-	int fd1 = open("STUDENT_RECORD.txt", O_RDONLY);
+	int fd1 = open("FACULTY_RECORD.txt", O_RDONLY);
 	if (fd1 == -1)
     {
-        perror("Error while opening student file");
+        perror("Error while opening faculty file");
         return -2;
     }
 

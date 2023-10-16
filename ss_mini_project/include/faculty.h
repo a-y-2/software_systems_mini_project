@@ -2,7 +2,7 @@
 
 bool faculty_operation_handler(int connFD);
 bool add_course(int connFD,int id);
-//bool remove_course(int connFD);
+bool remove_course(int connFD,int id);
 
 bool faculty_operation_handler(int connFD)
 {
@@ -40,9 +40,9 @@ bool faculty_operation_handler(int connFD)
                 add_course(connFD,id);
                 break;
 
-            // case 2:
-            //     remove_course(connFD);
-            //     break;
+            case 2:
+                remove_course(connFD,id);
+                break;
             // case 3:
             //     view_enrollments(connFD);
             //     break;
@@ -123,15 +123,15 @@ bool add_course(int connFD,int id){
 
         struct Faculty faculty;
 
-        int fd1  = open("FACULTY_RECORD.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
+        int fd1  = open("FACULTY_RECORD.txt",O_RDONLY);
 
-    if (fd1 == -1)
-    {
-        perror("Error while opening faculty file");
-        return -2;
-    }
-    
-    else{
+        if (fd1 == -1)
+        {
+            perror("Error while opening faculty file");
+            return -2;
+        }
+        
+        else{
         
 
         // struct flock lock ;
@@ -146,15 +146,15 @@ bool add_course(int connFD,int id){
         //new_stu.id++;
 
        //entering critical section to add faculty 
-        lseek(fd1,(id-1)*sizeof(faculty),SEEK_SET);
-        readBytes = read(fd1, &faculty, sizeof(struct Faculty));
-        if (readBytes == -1)
-        {
-            perror("Error while reading faculty record from file!");
-            return -2;
-        }
+            lseek(fd1,(id-1)*sizeof(struct Faculty),SEEK_SET);
+            readBytes = read(fd1, &faculty, sizeof(struct Faculty));
+            if (readBytes == -1)
+            {
+                perror("Error while reading faculty record from file!");
+                return -2;
+            }
 
-        strcpy(course.faculty_name,faculty.name);
+            strcpy(course.faculty_name,faculty.name);
 
     //     lock.l_type = F_UNLCK;
     //     fcntl(fd1,F_SETLK,&lock);
@@ -181,60 +181,60 @@ bool add_course(int connFD,int id){
 
         // strcpy(course.faculty_name,readBuffer);
 
-        bzero(writeBuffer,sizeof(writeBuffer));
-        strcpy(writeBuffer, "\nEnter maximum no. of seats ? : ");
-        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-        if (writeBytes == -1)
-        {
-            perror("Error writing message to client!");
-            return -2;
-        }
-
-        bzero(readBuffer, sizeof(readBuffer));
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer));
-        if (readBytes == -1)
-        {
-            perror("Error reading max_seat response from client!");
-            return -2;
-        }
-
-        int seat = atoi(readBuffer);
-        course.max_seats = seat;
-        course.seats_left = seat;
-
-        int fd1  = open("COURSE.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
-
-        if (fd1 == -1)
-        {
-            perror("Error while opening COURSE file");
-            return -2;
-        }
-        
-        else{        
-
-            struct flock lock ;
-            lock.l_type = F_WRLCK;
-            lock.l_whence = SEEK_SET;//start position of the lock (lock.l_start) is relative to the beginning of the file.
-            lock.l_start = 0;//Set the starting position for the lock. 
-            lock.l_len = 0;//lock covers the entire faculty record
-            lock.l_pid = getpid();   
-        
-            //set lock on file    
-            fcntl(fd1, F_SETLKW, &lock);
-            //new_stu.id++;
-
-            
-            write(fd1,&course,sizeof(course));
-
-            lock.l_type = F_UNLCK;
-            fcntl(fd1,F_SETLK,&lock);
-            printf("\n details added");
-            close(fd1);
-
+            bzero(writeBuffer,sizeof(writeBuffer));
+            strcpy(writeBuffer, "\nEnter maximum no. of seats ? : ");
+            writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+            if (writeBytes == -1)
+            {
+                perror("Error writing message to client!");
+                return -2;
             }
 
+            bzero(readBuffer, sizeof(readBuffer));
+            readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+            if (readBytes == -1)
+            {
+                perror("Error reading max_seat response from client!");
+                return -2;
+            }
+
+            int seat = atoi(readBuffer);
+            course.max_seats = seat;
+            course.seats_left = seat;
+
+            int fd1  = open("COURSE.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
+
+            if (fd1 == -1)
+            {
+                perror("Error while opening COURSE file");
+                return -2;
+            }
+        
+            else{        
+
+                struct flock lock ;
+                lock.l_type = F_WRLCK;
+                lock.l_whence = SEEK_SET;//start position of the lock (lock.l_start) is relative to the beginning of the file.
+                lock.l_start = 0;//Set the starting position for the lock. 
+                lock.l_len = 0;//lock covers the entire faculty record
+                lock.l_pid = getpid();   
+            
+                //set lock on file    
+                fcntl(fd1, F_SETLKW, &lock);
+                //new_stu.id++;
+
+                
+                write(fd1,&course,sizeof(course));
+
+                lock.l_type = F_UNLCK;
+                fcntl(fd1,F_SETLK,&lock);
+                printf("\n details added");
+                close(fd1);
+
+                }
+
             bzero(writeBuffer,sizeof(writeBuffer));
-            strcpy(writeBuffer, "\nDO YOU WANT TO ADD MORE COURSES (press 0 for NO and 1 for YES) ? : ");
+            strcpy(writeBuffer, "\nDO YOU WANT TO ADD MORE COURSES (press N for NO and Y for YES) ? : ");
 
             writeBytes = write(connFD, writeBuffer, sizeof(writeBuffer));
             if (writeBytes == -1)
@@ -253,104 +253,160 @@ bool add_course(int connFD,int id){
 
             // int choice = atoi(readBuffer);
             // if(choice==0)
-            if(strcmp(readBuffer,"0")==0)
+            if(strcmp(readBuffer,"N")!=0)
             break;
     } }     
     return true;
 }
 
 //===========================================REMOVE COURSE========================================================
-// bool remove_course(int connFD){
-//     ssize_t readBytes, writeBytes;
-//     char readBuffer[1000], writeBuffer[1000];
+bool remove_course(int connFD,int id){
+    ssize_t readBytes, writeBytes;
+    char readBuffer[1000], writeBuffer[1000];
 
-//     struct Course new_course,temp_course;
+    struct Course new_course,temp_course;
+
+    // while(1){
+
+    // }
   
-//     bzero(writeBuffer,sizeof(writeBuffer));
-//     strcpy(writeBuffer, "\nEnter COURSE id ? : ");
-//     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//     if (writeBytes == -1)
-//     {
-//         perror("Error writing message to client!");
-//         return -2;
-//     }
+    bzero(writeBuffer,sizeof(writeBuffer));
+    strcpy(writeBuffer, "\nEnter COURSE id ? : ");
+    writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+    if (writeBytes == -1)
+    {
+        perror("Error writing message to client!");
+        return -2;
+    }
 
-//     bzero(readBuffer, sizeof(readBuffer));
-//     readBytes = read(connFD, readBuffer, sizeof(readBuffer));
-//     if (readBytes == -1)
-//     {
-//         perror("Error reading course id response from client!");
-//         return -2;
-//     }
+    bzero(readBuffer, sizeof(readBuffer));
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    if (readBytes == -1)
+    {
+        perror("Error reading course id response from client!");
+        return -2;
+    }
 
-//     int c_id = atoi(readBuffer);
-//     new_course.courseID = c_id;
+    int c_id = atoi(readBuffer);
+    new_course.courseID = c_id;
 
-//     bzero(writeBuffer,sizeof(writeBuffer));
-//     strcpy(writeBuffer, "\nEnter faculty name ? : ");
-//     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//     if (writeBytes == -1)
-//     {
-//         perror("Error writing message to client!");
-//         return -2;
-//     }
+    struct Faculty faculty;
 
-//     bzero(readBuffer, sizeof(readBuffer));
-//     readBytes = read(connFD, readBuffer, sizeof(readBuffer));
-//     if (readBytes == -1)
-//     {
-//         perror("Error reading course id response from client!");
-//         return -2;
-//     }
+    int fd1  = open("FACULTY_RECORD.txt",O_RDONLY);
 
-//     strcpy(new_course.courseName,readBuffer);
+    if (fd1 == -1)
+    {
+        perror("Error while opening faculty file");
+        return -2;
+    }
+    
+    else{
+        lseek(fd1,(id-1)*sizeof(struct Faculty),SEEK_SET);
+        readBytes = read(fd1, &faculty, sizeof(struct Faculty));
+        if (readBytes == -1)
+        {
+            perror("Error while reading faculty record from file!");
+            return -2;
+        }
 
-//     int fd1  = open("COURSE.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
+        strcpy(new_course.faculty_name,faculty.name);
+    }
 
-//     if (fd1 == -1)
-//     {
-//         perror("Error while opening course file");
-//         return -2;
-//     }
+    // bzero(writeBuffer,sizeof(writeBuffer));
+    // strcpy(writeBuffer, "\nEnter faculty name ? : ");
+    // writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+    // if (writeBytes == -1)
+    // {
+    //     perror("Error writing message to client!");
+    //     return -2;
+    // }
 
-//     struct flock lock ;
-//     lock.l_type = F_WRLCK;
-//     lock.l_whence = SEEK_SET;//start position of the lock (lock.l_start) is relative to the beginning of the file.
-//     lock.l_start = 0;//Set the starting position for the lock. 
-//     lock.l_len = 0;//lock covers the entire faculty record
-//     lock.l_pid = getpid();   
+    // bzero(readBuffer, sizeof(readBuffer));
+    // readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    // if (readBytes == -1)
+    // {
+    //     perror("Error reading course id response from client!");
+    //     return -2;
+    // }
 
-//     //set lock on file    
-//     fcntl(fd1, F_SETLKW, &lock);
+    // strcpy(new_course.courseName,readBuffer);
 
-//     // int fd2  = open("temp.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
+    int fd  = open("COURSE.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
 
-//     int bytesRead;
-//     int bytesToRead = sizeof(struct Teach);
-//     int bytesToWrite = 0;
+    if (fd == -1)
+    {
+        perror("Error while opening course file");
+        return -2;
+    }
 
-//     // Read and write records, excluding the one to be deleted
-//     while ((bytesRead = read(fd1, &temp_teach, bytesToRead)) > 0) {
-//         if ((temp_teach.faculty_id == new_teach.faculty_id)&&(temp_teach.course_id == new_teach.course_id)) {
-//             // Skip this record
-//             lseek(fd1, -bytesToRead, SEEK_CUR);
-//         } else {
-//             // Write the record back to the file
-//             write(fd1, &temp_teach, bytesToRead);
-//             bytesToWrite += bytesRead;
-//         }
-//     }
+    struct flock lock ;
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_SET;//start position of the lock (lock.l_start) is relative to the beginning of the file.
+    lock.l_start = 0;//Set the starting position for the lock. 
+    lock.l_len = 0;//lock covers the entire faculty record
+    lock.l_pid = getpid();   
 
-//     // Truncate the file to the new size
-//     ftruncate(fd1, bytesToWrite);
+    //set lock on file    
+    fcntl(fd, F_SETLKW, &lock);
 
-//     lock.l_type = F_UNLCK;
-//     fcntl(fd1,F_SETLK,&lock);
-//     printf("\n removed successfully!!");
+    //Create a temporary file for writing
+    int tempFile = creat("tempfile.txt", 0644);
+    if (tempFile == -1) {
+        perror("Error creating the temporary file");
+        //close(originalFile);
+        exit(1);
+    }
 
-//     close(fd1);
+    // Read records from the original file and write them to the temporary file
+    ssize_t bytesRead;
+    while ((bytesRead = read(fd, &temp_course, sizeof(struct Course)) > 0)) {
+        if (temp_course.courseID == new_course.courseID &&
+            strcmp(temp_course.faculty_name, new_course.faculty_name) == 0) {
+            // Skip this record
+        } else {
+            // Write the record to the temporary file
+            write(tempFile, &temp_course, sizeof(struct Course));
+        }
+    }
+
+    close(fd);
+    close(tempFile);
+
+    // Replace the original file with the temporary file
+    if (rename("tempfile.txt", "COURSE.txt") == -1) {
+        perror("Error renaming temporary file");
+        exit(1);
+    }
+
+
+    //int fd2  = open("temp.txt",O_CREAT | O_APPEND | O_WRONLY,0777);
+
+    // int bytesRead;
+    // int bytesToRead = sizeof(struct Course);
+    // int bytesToWrite = 0;
+
+    // // Read and write records, excluding the one to be deleted
+    // while ((bytesRead = read(fd, &temp_course, bytesToRead)) > 0) {
+    //     if ((strcmp(temp_course.faculty_name, new_course.faculty_name) == 0)&&(temp_course.courseID == new_course.courseID)) {
+    //         // Skip this record
+    //         lseek(fd, -bytesToRead, SEEK_CUR);
+    //     } else {
+    //         // Write the record back to the file
+    //         write(fd, &temp_course, bytesToRead);
+    //         bytesToWrite += bytesRead;
+    //     }
+    // }
+
+    // // Truncate the file to the new size
+    // ftruncate(fd, bytesToWrite);
+
+    lock.l_type = F_UNLCK;
+    fcntl(fd,F_SETLK,&lock);
+    printf("\n removed successfully!!");
+
+    //close(fd);
 
    
 
-//     return true;
-// }
+    return true;
+}
