@@ -360,13 +360,15 @@ bool remove_course(int connFD,int id){
     // Read records from the original file and write them to the temporary file
     ssize_t bytesRead;
     while ((bytesRead = read(fd, &temp_course, sizeof(struct Course)) > 0)) {
-        if (temp_course.courseID == new_course.courseID &&
-            strcmp(temp_course.faculty_name, new_course.faculty_name) == 0) {
+        if (!(temp_course.courseID == new_course.courseID &&
+            strcmp(temp_course.faculty_name, new_course.faculty_name) == 0)) {
             // Skip this record
-        } else {
-            // Write the record to the temporary file
             write(tempFile, &temp_course, sizeof(struct Course));
-        }
+            }
+        // } else {
+        //     // Write the record to the temporary file
+        //     write(tempFile, &temp_course, sizeof(struct Course));
+        // }
     }
 
     close(fd);
