@@ -119,3 +119,49 @@ int faculty_login_handler(int Socket_Descriptor, int Role){
 	return 0;	
 }
 
+
+int student_login_handler(int Socket_Descriptor, int Role){
+	ssize_t Write_Status, Bytes_Read;
+	char Write_Buffer[1000], Read_Buffer[1000], Password[1000];
+	int Id;
+	
+	
+	bzero(Write_Buffer, sizeof(Write_Buffer));
+	strcat(Write_Buffer, "Enter UserID : ");
+	write(Socket_Descriptor, &Write_Buffer, sizeof(Write_Buffer));
+			
+	bzero(Read_Buffer, sizeof(Read_Buffer)); 
+	Bytes_Read = read(Socket_Descriptor, &Read_Buffer, 1000);  //Collect ID from Client  (use of strlen() doesn't work here)
+	Id = atoi(Read_Buffer);
+
+	bzero(Write_Buffer, sizeof(Write_Buffer));
+	strcat(Write_Buffer, "Enter Password : ");
+	Write_Status = write(Socket_Descriptor, &Write_Buffer, sizeof(Write_Buffer));
+	
+	bzero(Read_Buffer, sizeof(Read_Buffer)); 
+	Bytes_Read = read(Socket_Descriptor, &Read_Buffer, 1000);  //Collect Password from Client
+	strcpy(Password, Read_Buffer);
+
+	struct Student student;
+
+	int fd1 = open("STUDENT_RECORD.txt", O_RDONLY);
+	if (fd1 == -1)
+    {
+        perror("Error while opening STUDENT file");
+        return -2;
+    }
+
+	int bytesRead;
+	int bytesToRead = sizeof(struct Student);
+	int bytesToWrite = 0;
+
+	while ((bytesRead = read(fd1, &student, bytesToRead)) > 0) {
+		if ((student.id == Id)&&(strcmp(Password,student.password)==0)) {
+			return Id;
+		} else {
+			continue;
+		}
+	}
+	return 0;	
+}
+

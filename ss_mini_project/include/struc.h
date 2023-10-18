@@ -23,7 +23,7 @@ struct Enrollment {
     int courseid;
     //char courseName[100];
     //int status;
-    //int id;
+    char faculty_name[50];
     //char enrollmentDate[12];
 };
 
@@ -31,8 +31,9 @@ struct Course {
     int courseID;
     char courseName[100];
     int max_seats;
-    int seats_left;
     char faculty_name[100];
+    int seats_left;
+    
 };
 
 struct Teach {

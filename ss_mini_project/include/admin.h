@@ -17,8 +17,8 @@
 bool admin_operation_handler(int connFD);
 bool add_student(int connFD);
 bool add_faculty(int connFD);
-// bool update_student(int connFD);
-// bool update_faculty(int connFD);
+bool update_student(int connFD);
+bool update_faculty(int connFD);
 bool activate_student(int connFD);
 bool deactivate_student(int connFD);
 
@@ -26,7 +26,13 @@ bool admin_operation_handler(int connFD)
 {
     ssize_t writeBytes, readBytes;            // Number of bytes read from / written to the client
     char readBuffer[1000], writeBuffer[1000]; 
-    if (login_handler(connFD, 1))
+    int flag=1,id;
+    while(flag==1){
+        id = login_handler(connFD,1);
+        if(id!=0)
+            flag=0;
+    }
+    if (id!=0)
     {
         while(1){
             strcat(writeBuffer, "\n\n------------------------Admin Menu-------------------------\n");
@@ -66,13 +72,13 @@ bool admin_operation_handler(int connFD)
                 deactivate_student(connFD);
                 break;
 
-            // case 5:
-            //     update_student(connFD);
-            //     break;
+            case 5:
+                update_student(connFD);
+                break;
 
-            // case 6:
-            //     update_faculty(connFD);
-            //     break;
+            case 6:
+                update_faculty(connFD);
+                break;
             case 7:
                 writeBytes = write(connFD, "\nLogging you out!$", strlen("\nLogging you out!$"));
                 return false;
@@ -357,666 +363,492 @@ bool add_faculty(int connFD){
     
 }
 
-// //---------------------------UPDATE STUDENT ---------------------------------------------------
-// bool update_student(int connFD)
-// {
-//     ssize_t readBytes, writeBytes;
-//     char readBuffer[1000], writeBuffer[1000];
+//---------------------------UPDATE STUDENT ---------------------------------------------------------------------------------------
+bool update_student(int connFD)
+{
+    ssize_t readBytes, writeBytes;
+    char readBuffer[1000], writeBuffer[1000];
 
-//     struct Student student;
+    struct Student student;
 
-//     int studentID;
+    int studentID;
 
-//     off_t offset;//off_t is a data type often used in C and C++ programming for representing file offsets
-//     int lockingStatus;
+    off_t offset;//off_t is a data type often used in C and C++ programming for representing file offsets
+    int lockingStatus;
 
-//     writeBytes = write(connFD, "\nEnter the ID of the student whose information you want to edit : ", strlen("\nEnter the ID of the student whose information you want to edit : "));
-//     if (writeBytes == -1)
-//     {
-//         perror("Error while writing message to client!");
-//         return false;
-//     }
-//     bzero(readBuffer, sizeof(readBuffer));
-//     readBytes = read(connFD, readBuffer, sizeof(readBuffer));
-//     if (readBytes == -1)
-//     {
-//         perror("Error while reading student ID from client!");
-//         return false;
-//     }
+    writeBytes = write(connFD, "\nEnter the ID of the student whose information you want to edit : ", strlen("\nEnter the ID of the student whose information you want to edit : "));
+    if (writeBytes == -1)
+    {
+        perror("Error while writing message to client!");
+        return false;
+    }
+    bzero(readBuffer, sizeof(readBuffer));
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    if (readBytes == -1)
+    {
+        perror("Error while reading student ID from client!");
+        return false;
+    }
 
-//     studentID = atoi(readBuffer);
-//     // printf("%s", readBuffer);
+    studentID = atoi(readBuffer);
+    // printf("%s", readBuffer);
 
-//     int studentFileDescriptor = open("STUDENT_RECORD.txt", O_RDONLY);
-//     if (studentFileDescriptor == -1 || ((strcmp(readBuffer, "0") != 0) && studentID == 0))
-//     {
-//         // student File doesn't exist
-//         bzero(writeBuffer, sizeof(writeBuffer));
-//         strcpy(writeBuffer, "\n***No student found for the given ID***\n");
-//         //strcat(writeBuffer, "^");
-//         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-//         return false;
-//     }
+    int studentFileDescriptor = open("STUDENT_RECORD.txt", O_RDONLY);
+    if (studentFileDescriptor == -1 || ((strcmp(readBuffer, "0") != 0) && studentID == 0))
+    {
+        // student File doesn't exist
+        bzero(writeBuffer, sizeof(writeBuffer));
+        strcpy(writeBuffer, "\n***No student found for the given ID***\n");
+        //strcat(writeBuffer, "^");
+        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
+            return false;
+        }
+        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+        return false;
+    }
 
-//     offset = lseek(studentFileDescriptor, (studentID-1) * sizeof(struct Student), SEEK_SET);
-//     if (errno == EINVAL)
-//     {
-//         // student record doesn't exist
-//         bzero(writeBuffer, sizeof(writeBuffer));
-//         strcpy(writeBuffer, "\n***No student be found for the given ID***\n");
-//         //strcat(writeBuffer, "^");
-//         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-//         return false;
-//     }
-//     else if (offset == -1)
-//     {
-//         perror("Error while seeking to required student record!");
-//         return false;
-//     }
+    offset = lseek(studentFileDescriptor, (studentID-1) * sizeof(struct Student), SEEK_SET);
+    if (errno == EINVAL)
+    {
+        // student record doesn't exist
+        bzero(writeBuffer, sizeof(writeBuffer));
+        strcpy(writeBuffer, "\n***No student be found for the given ID***\n");
+        //strcat(writeBuffer, "^");
+        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
+            return false;
+        }
+        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+        return false;
+    }
+    else if (offset == -1)
+    {
+        perror("Error while seeking to required student record!");
+        return false;
+    }
 
-//     struct flock lock = {F_RDLCK, SEEK_SET, offset, sizeof(struct Student), getpid()};
+    struct flock lock = {F_RDLCK, SEEK_SET, offset, sizeof(struct Student), getpid()};
 
-//     // Lock the record to be read
-//     lockingStatus = fcntl(studentFileDescriptor, F_SETLKW, &lock);
-//     if (lockingStatus == -1)
-//     {
-//         perror("Couldn't obtain lock on student record!");
-//         return false;
-//     }
+    // Lock the record to be read
+    lockingStatus = fcntl(studentFileDescriptor, F_SETLKW, &lock);
+    if (lockingStatus == -1)
+    {
+        perror("Couldn't obtain lock on student record!");
+        return false;
+    }
 
-//     readBytes = read(studentFileDescriptor, &student, sizeof(struct Student));
-//     if (readBytes == -1)
-//     {
-//         perror("Error while reading customer record from the file!");
-//         return false;
-//     }
+    readBytes = read(studentFileDescriptor, &student, sizeof(struct Student));
+    if (readBytes == -1)
+    {
+        perror("Error while reading student record from the file!");
+        return false;
+    }
 
-//     // Unlock the record
-//     lock.l_type = F_UNLCK;
-//     fcntl(studentFileDescriptor, F_SETLK, &lock);
+    // Unlock the record
+    lock.l_type = F_UNLCK;
+    fcntl(studentFileDescriptor, F_SETLK, &lock);
 
-//     close(studentFileDescriptor);
-//     if (readBytes == 0)
-//     {
-//         // student record doesn't exist
-//         bzero(writeBuffer, sizeof(writeBuffer));
-//         strcpy(writeBuffer, "\n***No student could be found for the given ID***\n");
-//         strcat(writeBuffer, "^");
-//         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-//         return false;
-//     }
+    close(studentFileDescriptor);
+    if (readBytes == 0)
+    {
+        // student record doesn't exist
+        bzero(writeBuffer, sizeof(writeBuffer));
+        strcpy(writeBuffer, "\n***No student could be found for the given ID***\n");
+        strcat(writeBuffer, "^");
+        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
+            return false;
+        }
+        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+        return false;
+    }
 
-//     writeBytes = write(connFD, "Which information would you like to modify?\n1. Name 2. Age 3. Gender 4. Login ID 5. Password \nPress any other key and enter to cancel : ", strlen("Which information would you like to modify?\n1. Name 2. Age 3. Gender 4. Login ID 5. Password \nPress any other key and enter to cancel : "));
-//     if (writeBytes == -1)
-//     {
-//         perror("Error while writing ADMIN_MOD_STUDENT_MENU message to client!");
-//         return false;
-//     }
-//     readBytes = read(connFD, readBuffer, sizeof(readBuffer));
-//     if (readBytes == -1)
-//     {
-//         perror("Error while getting student modification menu choice from client!");
-//         return false;
-//     }
+    writeBytes = write(connFD, "Which information would you like to modify?\n1. Name 2. Age 3. Gender 4. Login ID 5. Password \nPress any other key and enter to cancel : ", strlen("Which information would you like to modify?\n1. Name 2. Age 3. Gender 4. Login ID 5. Password \nPress any other key and enter to cancel : "));
+    if (writeBytes == -1)
+    {
+        perror("Error while writing ADMIN_MOD_STUDENT_MENU message to client!");
+        return false;
+    }
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    if (readBytes == -1)
+    {
+        perror("Error while getting student modification menu choice from client!");
+        return false;
+    }
 
-//     int choice = atoi(readBuffer);
-//     if (choice == 0)
-//     { // A non-numeric string was passed to atoi
-//         bzero(writeBuffer, sizeof(writeBuffer));
-//         strcpy(writeBuffer, "\nInvalid input!\nYou'll now be redirected to the main menu!\n^");
-//         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing ERRON_INPUT_FOR_NUMBER message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-//         return false;
-//     }
+    int choice = atoi(readBuffer);
+    if (choice == 0)
+    { // A non-numeric string was passed to atoi
+        bzero(writeBuffer, sizeof(writeBuffer));
+        strcpy(writeBuffer, "\nInvalid input!\nYou'll now be redirected to the main menu!\n^");
+        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing ERRON_INPUT_FOR_NUMBER message to client!");
+            return false;
+        }
+        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+        return false;
+    }
 
-//     bzero(readBuffer, sizeof(readBuffer));
-//     switch (choice)
-//     {
-//     case 1:
-//         // UPDATE NAME
-//         writeBytes = write(connFD, "\nWhat's the updated value for name ? : ", strlen("What's the updated value for name ? : "));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing ADMIN_MOD_STUDENT_NEW_NAME message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
-//         if (readBytes == -1)
-//         {
-//             perror("Error while getting response for student's new name from client!");
-//             return false;
-//         }
-//         strcpy(student.name, readBuffer);
-//         break;
-//     case 2:
-//         // update age
-//         writeBytes = write(connFD, "\nWhat's the updated value for age ? ", strlen("What's the updated value for age ? "));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing ADMIN_MOD_STUDENT_NEW_AGE message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
-//         if (readBytes == -1)
-//         {
-//             perror("Error while getting response for student's new age from client!");
-//             return false;
-//         }
-//         int updatedAge = atoi(readBuffer);
-//         if (updatedAge < 18 || updatedAge > 100)
-//         {
-//             // Either client has sent age as 0 (which is invalid) or has entered a non-numeric string
-//             bzero(writeBuffer, sizeof(writeBuffer));
-//             strcpy(writeBuffer, "Invalid input!\nYou'll now be redirected to the main menu!\n^");
-//             writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//             if (writeBytes == -1)
-//             {
-//                 perror("Error while writing ERRON_INPUT_FOR_NUMBER message to client!");
-//                 return false;
-//             }
-//             readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-//             return false;
-//         }
-//         student.age = updatedAge;
-//         break;
-//     case 3:
-//         // update gender
-//         writeBytes = write(connFD, "\nWhat's the updated value for gender ? ", strlen("What's the updated value for gender ? "));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing ADMIN_MOD_CUSTOMER_NEW_GENDER message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
+    bzero(readBuffer, sizeof(readBuffer));
+    switch (choice)
+    {
+    case 1:
+        // UPDATE NAME
+        writeBytes = write(connFD, "\nWhat's the updated value for name ? : ", strlen("What's the updated value for name ? : "));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing ADMIN_MOD_STUDENT_NEW_NAME message to client!");
+            return false;
+        }
+        readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
+        if (readBytes == -1)
+        {
+            perror("Error while getting response for student's new name from client!");
+            return false;
+        }
+        strcpy(student.name, readBuffer);
+        break;
+    case 2:
+        // update age
+        writeBytes = write(connFD, "\nWhat's the updated value for age ? ", strlen("What's the updated value for age ? "));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing ADMIN_MOD_STUDENT_NEW_AGE message to client!");
+            return false;
+        }
+        readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
+        if (readBytes == -1)
+        {
+            perror("Error while getting response for student's new age from client!");
+            return false;
+        }
+        int updatedAge = atoi(readBuffer);
+        if (updatedAge < 18 || updatedAge > 100)
+        {
+            // Either client has sent age as 0 (which is invalid) or has entered a non-numeric string
+            bzero(writeBuffer, sizeof(writeBuffer));
+            strcpy(writeBuffer, "Invalid input!\nYou'll now be redirected to the main menu!\n^");
+            writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+            if (writeBytes == -1)
+            {
+                perror("Error while writing ERRON_INPUT_FOR_NUMBER message to client!");
+                return false;
+            }
+            readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+            return false;
+        }
+        student.age = updatedAge;
+        break;
+    case 3:
+        // update gender
+        writeBytes = write(connFD, "\nWhat's the updated value for gender ? ", strlen("What's the updated value for gender ? "));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing ADMIN_MOD_CUSTOMER_NEW_GENDER message to client!");
+            return false;
+        }
+        readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
 
-//         if (readBytes == -1)
-//         {
-//             perror("Error while getting response for customer's new gender from client!");
-//             return false;
-//         }
-//         if (readBuffer[0] != 'M' && readBuffer[0] != 'F' && readBuffer[0] != 'O' && readBuffer[0] != 'm' && readBuffer[0] != 'f' && readBuffer[0] != 'o')
-//         {
-//             perror("Error while getting response for student's new gender from client!");
-//             bzero(writeBuffer, sizeof(writeBuffer));
-//             sprintf(writeBuffer, "%s^", "\nEnter a valid character for gender.\n");
+        if (readBytes == -1)
+        {
+            perror("Error while getting response for customer's new gender from client!");
+            return false;
+        }
+        if (readBuffer[0] != 'M' && readBuffer[0] != 'F' && readBuffer[0] != 'O' && readBuffer[0] != 'm' && readBuffer[0] != 'f' && readBuffer[0] != 'o')
+        {
+            perror("Error while getting response for student's new gender from client!");
+            bzero(writeBuffer, sizeof(writeBuffer));
+            sprintf(writeBuffer, "%s^", "\nEnter a valid character for gender.\n");
 
-//             writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//             readBytes = read(connFD, readBuffer, sizeof(readBuffer));
-//             bzero(writeBuffer, sizeof(writeBuffer));
-//             return false;
-//         }
-//         student.gender = toupper(readBuffer[0]);
-//         break;
+            writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+            readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+            bzero(writeBuffer, sizeof(writeBuffer));
+            return false;
+        }
+        student.gender = toupper(readBuffer[0]);
+        break;
 
-//     case 4:
-//         // UPDATE login id
-//         writeBytes = write(connFD, "\nWhat's the updated value for LoginId ? : ", strlen("\nWhat's the updated value for LoginId ? : "));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing ADMIN_MOD_STUDENT_NEW_LOGIN message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
-//         if (readBytes == -1)
-//         {
-//             perror("Error while getting response for student's new login_id from client!");
-//             return false;
-//         }
-//         strcat(readBuffer, "-");
-//         // strcat(readBuffer, customer.id);
 
-//         sprintf(readBuffer, "%s%d", readBuffer, student.id);//readBuffer is used both as the destination and as part of the source for the formatted string. This means that it appends the formatted value of customer.id to the end of the existing readBuffer.
+    default:
+        bzero(writeBuffer, sizeof(writeBuffer));
+        strcpy(writeBuffer, "\n\nExiting..\nYou'll now be redirected to the main menu!");
+        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing INVALID_MENU_CHOICE message to client!");
+            return false;
+        }
+        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+        return false;
+    }
 
-//         strcpy(student.login, readBuffer);
-//         bzero(writeBuffer, sizeof(writeBuffer));
-//         sprintf(writeBuffer, "%s %s^", "\nThe new customer login  id is : ", readBuffer);
+    studentFileDescriptor = open("STUDENT_RECORD.txt", O_WRONLY);
+    if (studentFileDescriptor == -1)
+    {
+        perror("Error while opening student file");
+        return false;
+    }
+    offset = lseek(studentFileDescriptor, (studentID-1) * sizeof(struct Student), SEEK_SET);
+    if (offset == -1)
+    {
+        perror("Error while seeking to required student record!");
+        return false;
+    }
 
-//         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//         readBytes = read(connFD, readBuffer, sizeof(readBuffer));
-//         bzero(writeBuffer, sizeof(writeBuffer));
+    lock.l_type = F_WRLCK;
+    lock.l_start = offset;
+    lockingStatus = fcntl(studentFileDescriptor, F_SETLKW, &lock);
+    if (lockingStatus == -1)
+    {
+        perror("Error while obtaining write lock on student record!");
+        return false;
+    }
 
-//         break;
-//     // case 5:
-//     //     // UPDATE password
-//     //     writeBytes = write(connFD, "\nWhat's the updated value for Password ?: ", strlen("\nWhat's the updated value for Password ?: "));
-//     //     if (writeBytes == -1)
-//     //     {
-//     //         perror("Error while writing ADMIN_MOD_STUDENT_PASSWORD message to client!");
-//     //         return false;
-//     //     }
-//     //     readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
-//     //     if (readBytes == -1)
-//     //     {
-//     //         perror("Error while getting response for student's new password from client!");
-//     //         return false;
-//     //     }
+    writeBytes = write(studentFileDescriptor, &student, sizeof(struct Student));
+    if (writeBytes == -1)
+    {
+        perror("Error while writing update student info into file");
+    }
 
-//     //     strcpy(student.password, crypt(readBuffer, SALT_BAE));
-//     //     //crypt is a cryptographic function that takes two arguments: the string to be hashed (readBuffer in this case) and a salt value
-//     //     // (SALT_BAE in this case). The salt value is used to enhance security by adding randomness to the hash.
-//     //     //The result of the crypt function is a hashed version of readBuffer, and it's being copied into student.password using strcpy
+    lock.l_type = F_UNLCK;
+    fcntl(studentFileDescriptor, F_SETLKW, &lock);
 
-//     //     break;
-//     default:
-//         bzero(writeBuffer, sizeof(writeBuffer));
-//         strcpy(writeBuffer, "\n\nExiting..\nYou'll now be redirected to the main menu!");
-//         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing INVALID_MENU_CHOICE message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-//         return false;
-//     }
+    close(studentFileDescriptor);
 
-//     studentFileDescriptor = open("STUDENT_RECORD.txt", O_WRONLY);
-//     if (studentFileDescriptor == -1)
-//     {
-//         perror("Error while opening student file");
-//         return false;
-//     }
-//     offset = lseek(studentFileDescriptor, (studentID-1) * sizeof(struct Student), SEEK_SET);
-//     if (offset == -1)
-//     {
-//         perror("Error while seeking to required student record!");
-//         return false;
-//     }
+    writeBytes = write(connFD, "\n\nThe required modification was successfully made!\nYou'll now be redirected to the main menu!^", strlen("\n\nThe required modification was successfully made!\nYou'll now be redirected to the main menu!^"));
+    if (writeBytes == -1)
+    {
+        perror("Error while writing ADMIN_MOD_STUDENT_SUCCESS message to client!");
+        return false;
+    }
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
 
-//     lock.l_type = F_WRLCK;
-//     lock.l_start = offset;
-//     lockingStatus = fcntl(studentFileDescriptor, F_SETLKW, &lock);
-//     if (lockingStatus == -1)
-//     {
-//         perror("Error while obtaining write lock on student record!");
-//         return false;
-//     }
-
-//     writeBytes = write(studentFileDescriptor, &student, sizeof(struct Student));
-//     if (writeBytes == -1)
-//     {
-//         perror("Error while writing update student info into file");
-//     }
-
-//     lock.l_type = F_UNLCK;
-//     fcntl(studentFileDescriptor, F_SETLKW, &lock);
-
-//     close(studentFileDescriptor);
-
-//     writeBytes = write(connFD, "\n\nThe required modification was successfully made!\nYou'll now be redirected to the main menu!^", strlen("\n\nThe required modification was successfully made!\nYou'll now be redirected to the main menu!^"));
-//     if (writeBytes == -1)
-//     {
-//         perror("Error while writing ADMIN_MOD_STUDENT_SUCCESS message to client!");
-//         return false;
-//     }
-//     readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-
-//     return true;
-// }
+    return true;
+}
 // //_______________________________________________________________________________________________
 
 
-// //---------------------------UPDATE FACULTY ---------------------------------------------------
-// bool update_faculty(int connFD)
-// {
-//     ssize_t readBytes, writeBytes;
-//     char readBuffer[1000], writeBuffer[1000];
+//---------------------------UPDATE FACULTY ---------------------------------------------------
+bool update_faculty(int connFD)
+{
+    ssize_t readBytes, writeBytes;
+    char readBuffer[1000], writeBuffer[1000];
 
-//     struct Faculty faculty;
+    struct Faculty faculty;
 
-//     int facultyID;
+    int facultyID;
 
-//     off_t offset;//off_t is a data type often used in C and C++ programming for representing file offsets
-//     int lockingStatus;
+    off_t offset;//off_t is a data type often used in C and C++ programming for representing file offsets
+    int lockingStatus;
 
-//     writeBytes = write(connFD, "\nEnter the ID of the faculty whose information you want to edit : ", strlen("\nEnter the ID of the faculty whose information you want to edit : "));
-//     if (writeBytes == -1)
-//     {
-//         perror("Error while writing message to client!");
-//         return false;
-//     }
-//     bzero(readBuffer, sizeof(readBuffer));
-//     readBytes = read(connFD, readBuffer, sizeof(readBuffer));
-//     if (readBytes == -1)
-//     {
-//         perror("Error while reading faculty ID from client!");
-//         return false;
-//     }
+    writeBytes = write(connFD, "\nEnter the ID of the faculty whose information you want to edit : ", strlen("\nEnter the ID of the faculty whose information you want to edit : "));
+    if (writeBytes == -1)
+    {
+        perror("Error while writing message to client!");
+        return false;
+    }
+    bzero(readBuffer, sizeof(readBuffer));
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    if (readBytes == -1)
+    {
+        perror("Error while reading faculty ID from client!");
+        return false;
+    }
 
-//     facultyID = atoi(readBuffer);
-//     // printf("%s", readBuffer);
+    facultyID = atoi(readBuffer);
+    // printf("%s", readBuffer);
 
-//     int facultyFileDescriptor = open("FACULTY_RECORD.txt", O_RDONLY);
-//     if (facultyFileDescriptor == -1 || ((strcmp(readBuffer, "0") != 0) && facultyID == 0))
-//     {
-//         // faculty File doesn't exist
-//         bzero(writeBuffer, sizeof(writeBuffer));
-//         strcpy(writeBuffer, "\n***No faculty found for the given ID***\n");
-//         //strcat(writeBuffer, "^");
-//         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing FACULTY_ID_DOESNT_EXIT message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-//         return false;
-//     }
+    int facultyFileDescriptor = open("FACULTY_RECORD.txt", O_RDONLY);
+    if (facultyFileDescriptor == -1 || ((strcmp(readBuffer, "0") != 0) && facultyID == 0))
+    {
+        // faculty File doesn't exist
+        bzero(writeBuffer, sizeof(writeBuffer));
+        strcpy(writeBuffer, "\n***No faculty found for the given ID***\n");
+        //strcat(writeBuffer, "^");
+        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing FACULTY_ID_DOESNT_EXIT message to client!");
+            return false;
+        }
+        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+        return false;
+    }
 
-//     offset = lseek(facultyFileDescriptor, (facultyID-1) * sizeof(struct Faculty), SEEK_SET);
-//     if (errno == EINVAL)
-//     {
-//         // faculty record doesn't exist
-//         bzero(writeBuffer, sizeof(writeBuffer));
-//         strcpy(writeBuffer, "\n***No faculty found for the given ID***\n");
-//         //strcat(writeBuffer, "^");
-//         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing FACULTY_ID_DOESNT_EXIT message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-//         return false;
-//     }
-//     else if (offset == -1)
-//     {
-//         perror("Error while seeking to required faculty record!");
-//         return false;
-//     }
+    offset = lseek(facultyFileDescriptor, (facultyID-1) * sizeof(struct Faculty), SEEK_SET);
+    if (errno == EINVAL)
+    {
+        // faculty record doesn't exist
+        bzero(writeBuffer, sizeof(writeBuffer));
+        strcpy(writeBuffer, "\n***No faculty found for the given ID***\n");
+        //strcat(writeBuffer, "^");
+        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing FACULTY_ID_DOESNT_EXIT message to client!");
+            return false;
+        }
+        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+        return false;
+    }
+    else if (offset == -1)
+    {
+        perror("Error while seeking to required faculty record!");
+        return false;
+    }
 
-//     struct flock lock = {F_RDLCK, SEEK_SET, offset, sizeof(struct Faculty), getpid()};
+    struct flock lock = {F_RDLCK, SEEK_SET, offset, sizeof(struct Faculty), getpid()};
 
-//     // Lock the record to be read
-//     lockingStatus = fcntl(facultyFileDescriptor, F_SETLKW, &lock);
-//     if (lockingStatus == -1)
-//     {
-//         perror("Couldn't obtain lock on faculty record!");
-//         return false;
-//     }
+    // Lock the record to be read
+    lockingStatus = fcntl(facultyFileDescriptor, F_SETLKW, &lock);
+    if (lockingStatus == -1)
+    {
+        perror("Couldn't obtain lock on faculty record!");
+        return false;
+    }
 
-//     readBytes = read(facultyFileDescriptor, &faculty, sizeof(struct Faculty));
-//     if (readBytes == -1)
-//     {
-//         perror("Error while reading faculty record from the file!");
-//         return false;
-//     }
+    readBytes = read(facultyFileDescriptor, &faculty, sizeof(struct Faculty));
+    if (readBytes == -1)
+    {
+        perror("Error while reading faculty record from the file!");
+        return false;
+    }
 
-//     // Unlock the record
-//     lock.l_type = F_UNLCK;
-//     fcntl(facultyFileDescriptor, F_SETLK, &lock);
+    // Unlock the record
+    lock.l_type = F_UNLCK;
+    fcntl(facultyFileDescriptor, F_SETLK, &lock);
 
-//     close(facultyFileDescriptor);
-//     if (readBytes == 0)
-//     {
-//         // faculty record doesn't exist
-//         bzero(writeBuffer, sizeof(writeBuffer));
-//         strcpy(writeBuffer, "\n***No faculty could be found for the given ID***\n");
-//         strcat(writeBuffer, "^");
-//         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing FACULTY_ID_DOESNT_EXIT message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-//         return false;
-//     }
+    close(facultyFileDescriptor);
+    if (readBytes == 0)
+    {
+        // faculty record doesn't exist
+        bzero(writeBuffer, sizeof(writeBuffer));
+        strcpy(writeBuffer, "\n***No faculty could be found for the given ID***\n");
+        strcat(writeBuffer, "^");
+        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing FACULTY_ID_DOESNT_EXIT message to client!");
+            return false;
+        }
+        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+        return false;
+    }
 
-//     writeBytes = write(connFD, "Which information would you like to modify?\n1. Name 2. Age 3. Gender 4. Login ID 5. Password 6.course\nPress any other key and enter to cancel : ", strlen("Which information would you like to modify?\n1. Name 2. Age 3. Gender 4. Login ID 5. Password \nPress any other key and enter to cancel : "));
-//     if (writeBytes == -1)
-//     {
-//         perror("Error while writing ADMIN_MOD_FACULTY_MENU message to client!");
-//         return false;
-//     }
-//     readBytes = read(connFD, readBuffer, sizeof(readBuffer));
-//     if (readBytes == -1)
-//     {
-//         perror("Error while getting faculty modification menu choice from client!");
-//         return false;
-//     }
+    writeBytes = write(connFD, "Which information would you like to modify?\n1. Name\nPress any other key and enter to cancel : ", strlen("Which information would you like to modify?\n1. Name\nPress any other key and enter to cancel : "));
+    if (writeBytes == -1)
+    {
+        perror("Error while writing ADMIN_MOD_FACULTY_MENU message to client!");
+        return false;
+    }
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
+    if (readBytes == -1)
+    {
+        perror("Error while getting faculty modification menu choice from client!");
+        return false;
+    }
 
-//     int choice = atoi(readBuffer);
-//     if (choice == 0)
-//     { // A non-numeric string was passed to atoi
-//         bzero(writeBuffer, sizeof(writeBuffer));
-//         strcpy(writeBuffer, "\nInvalid input!\nYou'll now be redirected to the main menu!\n^");
-//         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing ERRON_INPUT_FOR_NUMBER message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-//         return false;
-//     }
+    int choice = atoi(readBuffer);
+    if (choice == 0)
+    { // A non-numeric string was passed to atoi
+        bzero(writeBuffer, sizeof(writeBuffer));
+        strcpy(writeBuffer, "\nInvalid input!\nYou'll now be redirected to the main menu!\n^");
+        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing ERRON_INPUT_FOR_NUMBER message to client!");
+            return false;
+        }
+        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+        return false;
+    }
 
-//     bzero(readBuffer, sizeof(readBuffer));
-//     switch (choice)
-//     {
-//     case 1:
-//         // UPDATE NAME
-//         writeBytes = write(connFD, "\nWhat's the updated value for name ? : ", strlen("What's the updated value for name ? : "));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing ADMIN_MOD_FACULTY_NEW_NAME message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
-//         if (readBytes == -1)
-//         {
-//             perror("Error while getting response for faculty's new name from client!");
-//             return false;
-//         }
-//         strcpy(faculty.name, readBuffer);
-//         break;
-//     case 2:
-//         // update age
-//         writeBytes = write(connFD, "\nWhat's the updated value for age ? ", strlen("What's the updated value for age ? "));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing ADMIN_MOD_FACULTY_NEW_AGE message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
-//         if (readBytes == -1)
-//         {
-//             perror("Error while getting response for faculty's new age from client!");
-//             return false;
-//         }
-//         int updatedAge = atoi(readBuffer);
-//         if (updatedAge < 18 || updatedAge > 100)
-//         {
-//             // Either client has sent age as 0 (which is invalid) or has entered a non-numeric string
-//             bzero(writeBuffer, sizeof(writeBuffer));
-//             strcpy(writeBuffer, "Invalid input!\nYou'll now be redirected to the main menu!\n^");
-//             writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//             if (writeBytes == -1)
-//             {
-//                 perror("Error while writing ERRON_INPUT_FOR_NUMBER message to client!");
-//                 return false;
-//             }
-//             readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-//             return false;
-//         }
-//         faculty.age = updatedAge;
-//         break;
-//     case 3:
-//         // update gender
-//         writeBytes = write(connFD, "\nWhat's the updated value for gender ? ", strlen("What's the updated value for gender ? "));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing ADMIN_MOD_FACULTY_NEW_GENDER message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
+    bzero(readBuffer, sizeof(readBuffer));
+    switch (choice)
+    {
+    case 1:
+        // UPDATE NAME
+        writeBytes = write(connFD, "\nWhat's the updated value for name ? : ", strlen("What's the updated value for name ? : "));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing ADMIN_MOD_FACULTY_NEW_NAME message to client!");
+            return false;
+        }
+        readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
+        if (readBytes == -1)
+        {
+            perror("Error while getting response for faculty's new name from client!");
+            return false;
+        }
+        strcpy(faculty.name, readBuffer);
+        break;
+    
+    default:
+        bzero(writeBuffer, sizeof(writeBuffer));
+        strcpy(writeBuffer, "\n\nExiting..\nYou'll now be redirected to the main menu!");
+        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+        if (writeBytes == -1)
+        {
+            perror("Error while writing INVALID_MENU_CHOICE message to client!");
+            return false;
+        }
+        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+        return false;
+    }
 
-//         if (readBytes == -1)
-//         {
-//             perror("Error while getting response for faculty's new gender from client!");
-//             return false;
-//         }
-//         if (readBuffer[0] != 'M' && readBuffer[0] != 'F' && readBuffer[0] != 'O' && readBuffer[0] != 'm' && readBuffer[0] != 'f' && readBuffer[0] != 'o')
-//         {
-//             perror("Error while getting response for faculty's new gender from client!");
-//             bzero(writeBuffer, sizeof(writeBuffer));
-//             sprintf(writeBuffer, "%s^", "\nEnter a valid character for gender.\n");
+    facultyFileDescriptor = open("FACULTY_RECORD.txt", O_WRONLY);
+    if (facultyFileDescriptor == -1)
+    {
+        perror("Error while opening faculty file");
+        return false;
+    }
+    offset = lseek(facultyFileDescriptor, (facultyID-1) * sizeof(struct Faculty), SEEK_SET);
+    if (offset == -1)
+    {
+        perror("Error while seeking to required faculty record!");
+        return false;
+    }
 
-//             writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//             readBytes = read(connFD, readBuffer, sizeof(readBuffer));
-//             bzero(writeBuffer, sizeof(writeBuffer));
-//             return false;
-//         }
-//         faculty.gender = toupper(readBuffer[0]);
-//         break;
+    lock.l_type = F_WRLCK;
+    lock.l_start = offset;
+    lockingStatus = fcntl(facultyFileDescriptor, F_SETLKW, &lock);
+    if (lockingStatus == -1)
+    {
+        perror("Error while obtaining write lock on faculty record!");
+        return false;
+    }
 
-//     case 4:
-//         // UPDATE login id
-//         writeBytes = write(connFD, "\nWhat's the updated value for LoginId ? : ", strlen("\nWhat's the updated value for LoginId ? : "));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing ADMIN_MOD_FACULTY_NEW_LOGIN message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
-//         if (readBytes == -1)
-//         {
-//             perror("Error while getting response for faculty's new login_id from client!");
-//             return false;
-//         }
-//         strcat(readBuffer, "-");
-//         // strcat(readBuffer, customer.id);
+    writeBytes = write(facultyFileDescriptor, &faculty, sizeof(struct Faculty));
+    if (writeBytes == -1)
+    {
+        perror("Error while writing update faculty info into file");
+    }
 
-//         sprintf(readBuffer, "%s%d", readBuffer,faculty.id);//readBuffer is used both as the destination and as part of the source for the formatted string. This means that it appends the formatted value of customer.id to the end of the existing readBuffer.
+    lock.l_type = F_UNLCK;
+    fcntl(facultyFileDescriptor, F_SETLKW, &lock);
 
-//         strcpy(faculty.login, readBuffer);
-//         bzero(writeBuffer, sizeof(writeBuffer));
-//         sprintf(writeBuffer, "%s %s^", "\nThe new faculty login  id is : ", readBuffer);
+    close(facultyFileDescriptor);
 
-//         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//         readBytes = read(connFD, readBuffer, sizeof(readBuffer));
-//         bzero(writeBuffer, sizeof(writeBuffer));
+    writeBytes = write(connFD, "\n\nThe required modification was successfully made!\nYou'll now be redirected to the main menu!^", strlen("\n\nThe required modification was successfully made!\nYou'll now be redirected to the main menu!^"));
+    if (writeBytes == -1)
+    {
+        perror("Error while writing ADMIN_MOD_FACULTY_SUCCESS message to client!");
+        return false;
+    }
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
 
-//         break;
-//     // case 5:
-//     //     // UPDATE password
-//     //     writeBytes = write(connFD, "\nWhat's the updated value for Password ?: ", strlen("\nWhat's the updated value for Password ?: "));
-//     //     if (writeBytes == -1)
-//     //     {
-//     //         perror("Error while writing ADMIN_MOD_STUDENT_PASSWORD message to client!");
-//     //         return false;
-//     //     }
-//     //     readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
-//     //     if (readBytes == -1)
-//     //     {
-//     //         perror("Error while getting response for student's new password from client!");
-//     //         return false;
-//     //     }
-
-//     //     strcpy(student.password, crypt(readBuffer, SALT_BAE));
-//     //     //crypt is a cryptographic function that takes two arguments: the string to be hashed (readBuffer in this case) and a salt value
-//     //     // (SALT_BAE in this case). The salt value is used to enhance security by adding randomness to the hash.
-//     //     //The result of the crypt function is a hashed version of readBuffer, and it's being copied into student.password using strcpy
-
-//     //     break;
-
-//     case 6:
-//         // update course
-//         writeBytes = write(connFD, "\nWhat's the updated value for course ? : ", strlen("What's the updated value for course ? : "));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing ADMIN_MOD_FACULTY_NEW_COURSE message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, &readBuffer, sizeof(readBuffer));
-//         if (readBytes == -1)
-//         {
-//             perror("Error while getting response for faculty's new course from client!");
-//             return false;
-//         }
-//         strcpy(faculty.course, readBuffer);
-//         break;
-
-//     default:
-//         bzero(writeBuffer, sizeof(writeBuffer));
-//         strcpy(writeBuffer, "\n\nExiting..\nYou'll now be redirected to the main menu!");
-//         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-//         if (writeBytes == -1)
-//         {
-//             perror("Error while writing INVALID_MENU_CHOICE message to client!");
-//             return false;
-//         }
-//         readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-//         return false;
-//     }
-
-//     facultyFileDescriptor = open("FACULTY_RECORD.txt", O_WRONLY);
-//     if (facultyFileDescriptor == -1)
-//     {
-//         perror("Error while opening faculty file");
-//         return false;
-//     }
-//     offset = lseek(facultyFileDescriptor, (facultyID-1) * sizeof(struct Faculty), SEEK_SET);
-//     if (offset == -1)
-//     {
-//         perror("Error while seeking to required faculty record!");
-//         return false;
-//     }
-
-//     lock.l_type = F_WRLCK;
-//     lock.l_start = offset;
-//     lockingStatus = fcntl(facultyFileDescriptor, F_SETLKW, &lock);
-//     if (lockingStatus == -1)
-//     {
-//         perror("Error while obtaining write lock on faculty record!");
-//         return false;
-//     }
-
-//     writeBytes = write(facultyFileDescriptor, &faculty, sizeof(struct Faculty));
-//     if (writeBytes == -1)
-//     {
-//         perror("Error while writing update faculty info into file");
-//     }
-
-//     lock.l_type = F_UNLCK;
-//     fcntl(facultyFileDescriptor, F_SETLKW, &lock);
-
-//     close(facultyFileDescriptor);
-
-//     writeBytes = write(connFD, "\n\nThe required modification was successfully made!\nYou'll now be redirected to the main menu!^", strlen("\n\nThe required modification was successfully made!\nYou'll now be redirected to the main menu!^"));
-//     if (writeBytes == -1)
-//     {
-//         perror("Error while writing ADMIN_MOD_FACULTY_SUCCESS message to client!");
-//         return false;
-//     }
-//     readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-
-//     return true;
-// }
-// //_______________________________________________________________________________________________
+    return true;
+}
+//________________________________________________________________________________________________________________________________
 
 //activate student
 bool activate_student(int connFD){
