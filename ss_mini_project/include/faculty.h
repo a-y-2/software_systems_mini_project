@@ -241,6 +241,8 @@ bool add_course(int connFD,int id){
 
                 }
 
+            
+    }
             bzero(writeBuffer,sizeof(writeBuffer));
             strcpy(writeBuffer, "\nDO YOU WANT TO ADD MORE COURSES ( NO or YES) ? : ");
 
@@ -263,7 +265,9 @@ bool add_course(int connFD,int id){
             // if(choice==0)
             if((strcmp(readBuffer,"No")==0)||(strcmp(readBuffer,"NO")==0)||(strcmp(readBuffer,"no")==0))
                 break;
-    } }     
+    
+    
+     }     
     return true;
 }
 

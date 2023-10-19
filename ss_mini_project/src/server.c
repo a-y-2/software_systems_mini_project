@@ -67,7 +67,7 @@ int main(){
 
     socketFileDescriptor = socket(AF_INET, SOCK_STREAM, 0);  //create new socket , returns fd on success else -1
                                                              //AF_INET is passed as the first argument to the socket function to create a socket that uses IPv4
-
+                                                            //SOCK_STREAM : full duplex
     if (socketFileDescriptor == -1)
     {
         perror("Error while creating server socket!");
@@ -76,9 +76,11 @@ int main(){
 
     serverAddress.sin_family = AF_INET;                // IPv4
     serverAddress.sin_port = htons(PORT);              // Server will listen to port 8080
-    serverAddress.sin_addr.s_addr = htonl(INADDR_ANY); // Binds the socket to all interfaces
+    serverAddress.sin_addr.s_addr = htonl(INADDR_ANY); // we want ip address on same machine
 
     //bind socket to address
+
+    //The second argument is a pointer to a structure specifying the address to which this socket is to be bound.
     socketBindStatus = bind(socketFileDescriptor, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
     if (socketBindStatus == -1)
     {
@@ -105,7 +107,8 @@ int main(){
         //accept an incoming connection request from a client socket after the server socket has been set up to listen for connections 
         //The accept() function typically creates a new socket to handle the actual communication with the client. 
         //Once the connection has been accepted, the server can use the new socket (often referred to as the "client socket" or 
-        //"accepted socket") to send and receive data to and from the client. This is where the actual data exchange between the server and client occurs
+        //"accepted socket") to send and receive data to and from the client. This is where the actual data exchange between the 
+        //server and client occurs
         
         connfd = accept(socketFileDescriptor, (struct sockaddr *)&clientAddress, &addrlen);
         if (connfd == -1)

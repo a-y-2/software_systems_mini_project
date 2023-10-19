@@ -435,7 +435,7 @@ bool view_courses(int connFD,int id){
 
     new_enrol.studentid = id;
 
-    int fd1  = open("ENROLLMENTS.txt",O_RDONLY);
+    int fd1  = open("ENROLLMENT.txt",O_RDONLY);
 
     if (fd1 == -1)
     {
