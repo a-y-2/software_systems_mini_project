@@ -1,5 +1,6 @@
 # software_systems_mini_project
-COURSE REGISTRATION PORTAL
+# COURSE REGISTRATION PORTAL
+
 Key features include:
 Storage: All details are stored in files.
 Login System: Administrator , students and faculty must pass through a login system to access their accounts.
